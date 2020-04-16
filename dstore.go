@@ -2,7 +2,6 @@ package sqlds
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 
 	ds "github.com/ipfs/go-datastore"
@@ -59,7 +58,6 @@ func (b *batch) GetTransaction() (*sql.Tx, error) {
 func (b *batch) Put(key ds.Key, val []byte) error {
 	txn, err := b.GetTransaction()
 	if err != nil {
-		_ = b.txn.Rollback()
 		return err
 	}
 
@@ -75,7 +73,6 @@ func (b *batch) Put(key ds.Key, val []byte) error {
 func (b *batch) Delete(key ds.Key) error {
 	txn, err := b.GetTransaction()
 	if err != nil {
-		_ = b.txn.Rollback()
 		return err
 	}
 
@@ -90,9 +87,9 @@ func (b *batch) Delete(key ds.Key) error {
 
 func (b *batch) Commit() error {
 	if b.txn == nil {
-		return errors.New("no transaction started, cannot commit")
+		return nil // no Put or Delete calls were made, nothing to do
 	}
-	var err = b.txn.Commit()
+	err := b.txn.Commit()
 	if err != nil {
 		_ = b.txn.Rollback()
 		return err
